@@ -104,7 +104,9 @@
             const symptomsByDisorder = new Map();
             let randDisorder;
 
-            symptomsByDisorder.set("alzheimer's", "Memory Loss, Anger, Fear");
+            symptomsByDisorder.set("alzheimer's", "Memory Decline, Learning Decline, Behavioral/Psychological Disturbance, Elevated Negative Mood");
+            symptomsByDisorder.set("adhd", "Reduced Behavioral Inhibition, Novelty Seeking, Negative Emotionality, Developmental Delays");
+            symptomsByDisorder.set("pica", "Persistent Nonfood Intake, Culturally Unsupported");
 
             function getRandomSymptomsByDisorder() { //map costly when i make 2 arrays using same index anyway, but map ties dissymp together...
                 let disorders = Array.from(symptomsByDisorder.keys());
