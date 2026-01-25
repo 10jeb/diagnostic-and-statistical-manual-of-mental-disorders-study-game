@@ -115,7 +115,7 @@
             }
 
             function submitAns(){
-                let ans = document.getElementById("ans").value.toLowerCase();
+                let ans = document.getElementById("ans").value.toLowerCase().trim().replace(/[’‘]/g, "'");;
 
                 if (ans == randDisorder) {
                     document.getElementById("result").textContent = "Correct!";
