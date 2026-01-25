@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Diagnostic and Statistical Manual of Mental Disorders Quiz Study Game</title>  
+        <style>
+            * {
+                box-sizing: border-box;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }
+
+            body {
+                background: linear-gradient(135deg, #5a7cff, #6fa8ff);
+                min-height: 100vh;
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: #ffffff;
+            }
+
+            .card {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(10px);
+                padding: 2rem 2.5rem;
+                border-radius: 16px;
+                width: 320px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            }
+
+            p {
+                margin: 0.75rem 0;
+                font-size: 1.05rem;
+                line-height: 1.4;
+            }
+
+            #symptoms {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1.25rem;
+            }
+
+            #result {
+                min-height: 1.5rem; /* prevents layout jump */
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: rgb(153, 97, 0);
+            }
+
+            input[type="text"] {
+                width: 100%;
+                padding: 0.6rem 0.8rem;
+                border-radius: 8px;
+                border: none;
+                outline: none;
+                font-size: 1rem;
+                margin-bottom: 0.8rem;
+            }
+
+            input[type="button"] {
+                width: 100%;
+                background-color: #ffffff;
+                color: #4a63ff;
+                border: none;
+                border-radius: 8px;
+                padding: 0.6rem;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                margin-bottom: 0.6rem;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+
+            input[type="button"]:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+            }
+
+            input[type="button"]:active {
+                transform: translateY(0);
+                box-shadow: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <p>Per the symptoms, what's the disorder?!</p><br>
+            <p id="symptoms" name="symptoms"></p>
+            <p id="result" name="result"></p>
+            <input type="text" name="ans" id="ans"><br>
+            <input type="button" onclick="submitAns()" value="Locking it in"><br>
+
+            <input type="button" onclick="window.location.reload()" value="Study Again">
+        </div>
+
+        <!--confetti library-->
+        <!--<script src="https://cdn.jsdelivr.net"></script>-->
+        <script>
+            const symptomsByDisorder = new Map();
+            let randDisorder;
+
+            symptomsByDisorder.set("alzheimer's", "Memory Loss, Anger, Fear");
+
+            function getRandomSymptomsByDisorder() { //map costly when i make 2 arrays using same index anyway, but map ties dissymp together...
+                let disorders = Array.from(symptomsByDisorder.keys());
+                let symptoms = Array.from(symptomsByDisorder.values());
+                let randInd = Math.floor(Math.random() * disorders.length);
+                randDisorder = disorders[randInd];
+                document.getElementById("symptoms").textContent = symptoms[randInd];
+            }
+
+            function submitAns(){
+                let ans = document.getElementById("ans").value.toLowerCase();
+
+                if (ans == randDisorder) {
+                    document.getElementById("result").textContent = "Correct!";
+                    // confetti({
+                    //     particleCount: 100, // Number of particles
+                    //     spread: 70,         // How wide the confetti spreads (in degrees)
+                    //     origin: { y: 0.6 }  // Origin point of the blast (0=top, 1=bottom)
+                    // });
+                } else {
+                    document.getElementById("result").textContent = "The correct answer is " + randDisorder;
+                }
+            }
+
+            window.onload = getRandomSymptomsByDisorder;
+        </script>
+    </body>
+</html>
