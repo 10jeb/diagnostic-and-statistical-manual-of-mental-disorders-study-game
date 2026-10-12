@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Diagnostic and Statistical Manual of Mental Disorders Quiz Study Game</title>  
+        <title>Diagnostic and Statistical Manual of Mental Disorders Quiz Study Game</title>
         <style>
             * {
                 box-sizing: border-box;
@@ -52,6 +52,15 @@
                 color: rgb(153, 97, 0);
             }
 
+            #score, #progress {
+                margin: 0.2rem 0;
+                font-size: 0.9rem;
+            }
+
+            #progress {
+                margin-bottom: 1rem;
+            }
+
             input[type="text"] {
                 width: 100%;
                 padding: 0.6rem 0.8rem;
@@ -85,26 +94,36 @@
                 transform: translateY(0);
                 box-shadow: none;
             }
+
+            input[type="button"].secondary {
+                background-color: transparent;
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.7);
+            }
         </style>
     </head>
     <body>
         <div class="card">
             <p>Based on DSM-5-TR</p>
-            <br>
+            <p id="score" name="score"></p>
+            <p id="progress" name="progress"></p>
             <p>Per the symptoms, what's the disorder?!</p><br>
             <p id="symptoms" name="symptoms"></p>
             <p id="result" name="result"></p>
             <input type="text" name="ans" id="ans"><br>
-            <input type="button" onclick="submitAns()" value="Locking it in"><br>
-
-            <input type="button" onclick="window.location.reload()" value="Study Again">
+            <input type="button" onclick="submitAns()" value="Locking it in">
+            <input type="button" onclick="nextQuestion()" value="Study Again">
+            <input type="button" class="secondary" onclick="resetProgress()" value="Reset Progress">
         </div>
 
         <!--confetti library-->
         <!--<script src="https://cdn.jsdelivr.net"></script>-->
         <script>
             const symptomsByDisorder = new Map();
+            const STORAGE_KEY = "dsmStudyProgress";
             let randDisorder;
+            let answered = false;
+            let progress = loadProgress();
 
             symptomsByDisorder.set("alzheimer's", "Memory Decline, Learning Decline, Behavioral/Psychological Disturbance, Elevated Negative Mood");
             symptomsByDisorder.set("adhd", "Reduced Behavioral Inhibition, Negative Emotionality, Developmental Delays, Executive Functioning Impairment");
@@ -191,7 +210,7 @@
             symptomsByDisorder.set("gambling disorder", "Persistent and Recurrent Problematic Gambling Behavior Leading to Clinically Significant Impairment or Distress for At Least 1 Year, Gambling Behavior Not Better Explained by a Manic Episode");
             symptomsByDisorder.set("frontotemporal neurocognitive disorder", "3 or More of the Following Behavioral Symptoms: Behavioral Disinhibition, Apathy or Inertia, Loss of Sympathy or Empathy, Perseverative or Compulsive Ritualistic Behavior, Hyperorality and Dietary Changes");
             symptomsByDisorder.set("vascular neurocognitive disorder", "Onset of Cognitive Deficits Temporarily Related to One or More Cerebrovascular Events");
-            symptomsByDisorder.set("neruocognitive disorder due to HIV infection", "Neurocognitive Impairment Following Documented Infection with Human Immunodeficieny Virus");
+            symptomsByDisorder.set("neurocognitive disorder due to hiv infection", "Neurocognitive Impairment Following Documented Infection with Human Immunodeficieny Virus");
             symptomsByDisorder.set("voyeuristic disorder", "Over At Least a 6-Month Period, Recurrent and Intense Sexual Arousal from Observing an Unsuspecting Naked Individual; Manifested by Fantasies, Urges or Behaviors");
             symptomsByDisorder.set("exhibitionistic disorder", "Over At Least a 6-Month Period, Recurrent and Intense Sexual Arousal from the Exposure of the Individual's Genitals to an Unsuspecting Individual; Specify Whether Aroused by Exposing to Prepubescent Children, Physically Mature Individuals, or both");
             symptomsByDisorder.set("frotteuristic disorder", "Over At Least a 6-Month Period, Recurrent and Intense Sexual Arousal from Thoughts of Touching or Rubbing Against a Non-Consenting Person that are Acted on At Least Once during the Time Period");
@@ -199,18 +218,69 @@
             symptomsByDisorder.set("sexual sadism disorder", "Over At Least a 6-Month Period, Recurrent and Intense Sexual Arousal from the Physical or Psychological Suffering of Another Individual, Must Cause Clinically Significant Impairment in Social Settings");
             symptomsByDisorder.set("pedophilic disorder", "Over At Least a 6-Month Period; Recurrent and Intense Sexual Arousal from Fantasies, Urges, or Behaviors with Children; Must have Acted on these Behvaiors At Least Once; Must be Older than 16 Years Old to Receive Diagnosis");
 
-            function getRandomSymptomsByDisorder() { //map costly when i make 2 arrays using same index anyway, but map ties dissymp together...
+            function loadProgress() {
+                const fresh = { correct: 0, attempts: 0, streak: 0, bestStreak: 0, mastered: [] };
+                try { //storage can be blocked (private windows) or hold bad data
+                    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                    if (saved && Array.isArray(saved.mastered)) {
+                        return Object.assign(fresh, saved);
+                    }
+                } catch (e) {}
+                return fresh;
+            }
+
+            function saveProgress() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+                } catch (e) {}
+            }
+
+            function renderScore() {
+                let total = symptomsByDisorder.size;
+                let masteredCount = progress.mastered.filter(d => symptomsByDisorder.has(d)).length;
+
+                document.getElementById("score").textContent =
+                    "Score: " + progress.correct + " / " + progress.attempts +
+                    " | Streak: " + progress.streak + " (best " + progress.bestStreak + ")";
+                document.getElementById("progress").textContent = masteredCount == total
+                    ? "All " + total + " disorders answered correctly! Reviewing everything."
+                    : "Progress: " + masteredCount + " of " + total + " disorders answered correctly";
+            }
+
+            function nextQuestion() {
                 let disorders = Array.from(symptomsByDisorder.keys());
-                let symptoms = Array.from(symptomsByDisorder.values());
-                let randInd = Math.floor(Math.random() * disorders.length);
-                randDisorder = disorders[randInd];
-                document.getElementById("symptoms").textContent = symptoms[randInd];
+                //ask disorders not yet answered correctly first, then review everything
+                let remaining = disorders.filter(d => !progress.mastered.includes(d));
+                let pool = remaining.length > 0 ? remaining : disorders;
+                if (pool.length > 1) {
+                    pool = pool.filter(d => d != randDisorder); //no back-to-back repeats
+                }
+
+                randDisorder = pool[Math.floor(Math.random() * pool.length)];
+                answered = false;
+                document.getElementById("symptoms").textContent = symptomsByDisorder.get(randDisorder);
+                document.getElementById("result").textContent = "";
+                document.getElementById("ans").value = "";
+                document.getElementById("ans").focus();
+                renderScore();
             }
 
             function submitAns(){
-                let ans = document.getElementById("ans").value.toLowerCase().trim().replace(/[’‘]/g, "'");;
+                let ans = document.getElementById("ans").value.toLowerCase().trim().replace(/[’‘]/g, "'");
+
+                if (answered || ans == "") { //each question is only scored once
+                    return;
+                }
+                answered = true;
+                progress.attempts++;
 
                 if (ans == randDisorder) {
+                    progress.correct++;
+                    progress.streak++;
+                    progress.bestStreak = Math.max(progress.bestStreak, progress.streak);
+                    if (!progress.mastered.includes(randDisorder)) {
+                        progress.mastered.push(randDisorder);
+                    }
                     document.getElementById("result").textContent = "Correct!";
                     // confetti({
                     //     particleCount: 100, // Number of particles
@@ -218,11 +288,30 @@
                     //     origin: { y: 0.6 }  // Origin point of the blast (0=top, 1=bottom)
                     // });
                 } else {
+                    progress.streak = 0;
                     document.getElementById("result").textContent = "The correct answer is " + randDisorder;
                 }
+
+                saveProgress();
+                renderScore();
             }
 
-            window.onload = getRandomSymptomsByDisorder;
+            function resetProgress() {
+                if (!confirm("Clear your score and progress?")) {
+                    return;
+                }
+                progress = { correct: 0, attempts: 0, streak: 0, bestStreak: 0, mastered: [] };
+                saveProgress();
+                nextQuestion();
+            }
+
+            document.getElementById("ans").addEventListener("keydown", function (e) {
+                if (e.key == "Enter") {
+                    submitAns();
+                }
+            });
+
+            window.onload = nextQuestion;
         </script>
     </body>
 </html>
